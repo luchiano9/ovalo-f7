@@ -12,7 +12,7 @@ export const players: Player[] = [
   {
     id: '1',
     name: 'Calesita Fornarini',
-    score: 95,
+    score: 90,
     description: 'El 10 del equipo, poca visión de juego pero buena pegada. Mínimo apoyo defensivo.',
     image: '/players/calesita.png',
     position: 'Delantero',
@@ -20,7 +20,7 @@ export const players: Player[] = [
   {
     id: '2',
     name: 'El mágico Maggio',
-    score: 75,
+    score: 52,
     description: 'Olfato goleador infalible y padre responsable.',
     image: '/players/maggio.png',
     position: 'Mediocampista',
@@ -28,7 +28,7 @@ export const players: Player[] = [
   {
     id: '3',
     name: 'Eze Barros',
-    score: 88,
+    score: 68,
     description: 'No pasa nadie por su lado. Un candado.',
     image: '/players/barros.png',
     position: 'Defensor',
@@ -36,7 +36,7 @@ export const players: Player[] = [
   {
     id: '4',
     name: 'Balonchad',
-    score: 82,
+    score: 74,
     description: 'Reflejos felinos bajo los tres palos.',
     image: '/players/balonchad.png',
     position: 'Arquero',
@@ -44,7 +44,7 @@ export const players: Player[] = [
   {
     id: '5',
     name: 'El Fabri',
-    score: 80,
+    score: 70,
     description: 'La pausa necesaria para oxigenar el juego. Padre de una bendición.',
     image: '/players/fabri.png',
     position: 'Delantero',
@@ -52,7 +52,7 @@ export const players: Player[] = [
   {
     id: '6',
     name: 'Agus',
-    score: 90,
+    score: 69,
     description: 'Distribuye el juego con precisión milimétrica.',
     image: '/players/agus.png',
     position: 'Mediocampista',
@@ -60,7 +60,7 @@ export const players: Player[] = [
   {
     id: '7',
     name: 'TEFO',
-    score: 85,
+    score: 73,
     description: 'Velocidad pura por la banda. Marcaje asfixiante sobre el rival.',
     image: '/players/tefo.jpg',
     position: 'Mediocampista',
@@ -68,7 +68,7 @@ export const players: Player[] = [
   {
     id: '8',
     name: 'El tanque Ferronato',
-    score: 87,
+    score: 66,
     description: 'Liderazgo y entrega total los 90 minutos. Actualmente lesionado.',
     image: '/players/ferronato.png',
     position: 'Defensor',
@@ -84,7 +84,7 @@ export const players: Player[] = [
   {
     id: '10',
     name: 'Nando',
-    score: 84,
+    score: 50,
     description: 'Firmeza absoluta en la última línea.',
     image: '/players/nando.png',
     position: 'Defensor',
@@ -92,7 +92,7 @@ export const players: Player[] = [
   {
     id: '11',
     name: 'Juli',
-    score: 78,
+    score: 70,
     description: 'Ataques punzantes y directos. Especialista de los tres dedos.',
     image: '/players/juli.png',
     position: 'Mediocampista',
@@ -100,7 +100,7 @@ export const players: Player[] = [
   {
     id: '12',
     name: 'Tiago',
-    score: 86,
+    score: 80,
     description: 'Mindfulness, meditación y terapia. Jugador de pádel.',
     image: '/players/tiago.png',
     position: 'Mediocampista',
@@ -108,7 +108,7 @@ export const players: Player[] = [
   {
     id: '13',
     name: 'Mazzini (zurdo)',
-    score: 81,
+    score: 75,
     description: 'Temperamental. Imponente presencia física.',
     image: '/players/mazzini.png',
     position: 'Defensor',
@@ -116,7 +116,7 @@ export const players: Player[] = [
   {
     id: '14',
     name: 'Luchini',
-    score: 83,
+    score: 79,
     description: 'Poeta de la redonda. Filigranas y regates renacentistas. Definición en blanco y negro.',
     image: '/players/luchini.jpg',
     position: 'Mediocampista',
@@ -124,7 +124,7 @@ export const players: Player[] = [
   {
     id: '15',
     name: 'Nico Dalmás',
-    score: 89,
+    score: 80,
     description: 'Lucha cada balón como si fuera el último.',
     image: 'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?q=80&w=2671&auto=format&fit=crop',
     position: 'Defensor',
@@ -132,7 +132,7 @@ export const players: Player[] = [
   {
     id: '16',
     name: 'Maxi el amigo de leo',
-    score: 91,
+    score: 60,
     description: 'La pausa necesaria para oxigenar el juego.',
     image: 'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?q=80&w=2671&auto=format&fit=crop',
     position: 'Mediocampista',
@@ -140,7 +140,7 @@ export const players: Player[] = [
   {
     id: '17',
     name: 'El bodi',
-    score: 88,
+    score: 80,
     description: 'Especialista en jugar de delantero los ultimos veinte minutos y perder el partido',
     image: '/players/bodi.png',
     position: 'Defensor',
@@ -148,7 +148,7 @@ export const players: Player[] = [
   {
     id: '18',
     name: 'Maurito ecloud',
-    score: 85,
+    score: 75,
     description: 'Playmaker. El cerebro.Tristemente influenciado por el fútbol español.',
     image: '/players/maurito.png',
     position: 'Mediocampista',
@@ -156,7 +156,7 @@ export const players: Player[] = [
   {
     id: '19',
     name: 'Tincho Stefoni',
-    score: 79,
+    score: 75,
     description: 'Actualmente fuera de las canchas.',
     image: 'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?q=80&w=2671&auto=format&fit=crop',
     position: 'Defensor',
@@ -164,7 +164,7 @@ export const players: Player[] = [
   {
     id: '20',
     name: 'EL GALLE',
-    score: 93,
+    score: 50,
     description: 'Firmeza absoluta en la última línea.',
     image: 'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?q=80&w=2671&auto=format&fit=crop',
     position: 'Defensor',
