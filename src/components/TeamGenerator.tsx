@@ -23,12 +23,12 @@ const PlayerCard = ({
             whileHover={!disabled || isSelected ? { scale: 1.02, translateY: -5 } : {}}
             whileTap={!disabled || isSelected ? { scale: 0.98 } : {}}
             onClick={onClick}
-            className={`relative cursor-pointer rounded-2xl overflow-hidden border-2 transition-all duration-300 ${isSelected
+            className={`relative cursor-pointer rounded-2xl border-2 transition-all duration-300 ${isSelected
                 ? 'border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)] bg-emerald-500/10'
                 : 'border-white/10 bg-white/5 hover:bg-white/10'
                 } ${disabled && !isSelected ? 'opacity-40 grayscale cursor-not-allowed' : ''}`}
         >
-            <div className="aspect-[4/5] relative">
+            <div className="aspect-[4/5] relative rounded-t-[14px] overflow-hidden">
                 <img
                     src={player.image}
                     alt={player.name}
@@ -52,7 +52,7 @@ const PlayerCard = ({
                 </div>
             </div>
 
-            <div className="p-3 text-xs text-gray-400 line-clamp-3 leading-relaxed">
+            <div className="p-3 text-[11px] leading-snug text-gray-400">
                 {player.description}
             </div>
         </motion.div>
@@ -158,7 +158,7 @@ export default function TeamGenerator() {
                     <Trophy className="w-10 h-10 text-emerald-500" />
                 </motion.div>
                 <h1 className="text-5xl md:text-7xl font-black tracking-tighter italic mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-white/40">
-                    TEAM PICKER <span className="text-emerald-500 underline decoration-4 underline-offset-8">OVALO</span>
+                    FUTBOL LUNES <span className="text-emerald-500 underline decoration-4 underline-offset-8">OVALO</span>
                 </h1>
                 <p className="text-gray-400 text-lg max-w-2xl mx-auto font-medium">
                     Seleccioná los <span className="text-emerald-400 font-bold tracking-tight">14</span> cracks que juegan este lunes y armamos los equipos más parejos.
