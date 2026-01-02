@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { players, type Player } from '../data/players';
-import { Trophy, Users, CheckCircle2, RotateCcw, Shirt, Star } from 'lucide-react';
+import { Trophy, Users, CheckCircle2, RotateCcw, Shirt } from 'lucide-react';
 
 const PlayerCard = ({
     player,
@@ -24,8 +24,8 @@ const PlayerCard = ({
             whileTap={!disabled || isSelected ? { scale: 0.98 } : {}}
             onClick={onClick}
             className={`relative cursor-pointer rounded-2xl overflow-hidden border-2 transition-all duration-300 ${isSelected
-                    ? 'border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)] bg-emerald-500/10'
-                    : 'border-white/10 bg-white/5 hover:bg-white/10'
+                ? 'border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)] bg-emerald-500/10'
+                : 'border-white/10 bg-white/5 hover:bg-white/10'
                 } ${disabled && !isSelected ? 'opacity-40 grayscale cursor-not-allowed' : ''}`}
         >
             <div className="aspect-[4/5] relative">
@@ -47,15 +47,12 @@ const PlayerCard = ({
                         <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-md">
                             {player.position}
                         </span>
-                        <span className="text-[10px] font-bold bg-amber-400 text-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
-                            <Star className="w-3 h-3 fill-black" /> {player.score}
-                        </span>
                     </div>
                     <h3 className="text-lg font-bold truncate">{player.name}</h3>
                 </div>
             </div>
 
-            <div className="p-3 text-xs text-gray-400 line-clamp-2 leading-relaxed">
+            <div className="p-3 text-xs text-gray-400 line-clamp-3 leading-relaxed">
                 {player.description}
             </div>
         </motion.div>
@@ -63,9 +60,6 @@ const PlayerCard = ({
 };
 
 const TeamDisplay = ({ title, team, color }: { title: string, team: Player[], color: string }) => {
-    const totalScore = team.reduce((acc, p) => acc + p.score, 0);
-    const avgScore = team.length > 0 ? (totalScore / team.length).toFixed(1) : 0;
-
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -77,16 +71,6 @@ const TeamDisplay = ({ title, team, color }: { title: string, team: Player[], co
                     <h3 className={`text-2xl font-black italic tracking-tighter ${color === 'emerald' ? 'text-emerald-400' : 'text-blue-400'}`}>
                         {title}
                     </h3>
-                    <div className="flex gap-4 mt-1">
-                        <div className="flex flex-col">
-                            <span className="text-[10px] uppercase text-gray-500 font-bold">Total Score</span>
-                            <span className="text-lg font-mono font-bold text-white">{totalScore}</span>
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-[10px] uppercase text-gray-500 font-bold">Avg</span>
-                            <span className="text-lg font-mono font-bold text-white">{avgScore}</span>
-                        </div>
-                    </div>
                 </div>
                 <Shirt className={`w-12 h-12 opacity-20 ${color === 'emerald' ? 'text-emerald-400' : 'text-blue-400'}`} />
             </div>
@@ -101,7 +85,6 @@ const TeamDisplay = ({ title, team, color }: { title: string, team: Player[], co
                                 <p className="text-[10px] text-gray-500 uppercase font-medium">{player.position}</p>
                             </div>
                         </div>
-                        <span className="text-xs font-bold text-amber-400">{player.score}</span>
                     </div>
                 ))}
             </div>
@@ -175,7 +158,7 @@ export default function TeamGenerator() {
                     <Trophy className="w-10 h-10 text-emerald-500" />
                 </motion.div>
                 <h1 className="text-5xl md:text-7xl font-black tracking-tighter italic mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-white/40">
-                    TEAM PICKER <span className="text-emerald-500 underline decoration-4 underline-offset-8">PRO</span>
+                    TEAM PICKER <span className="text-emerald-500 underline decoration-4 underline-offset-8">OVALO</span>
                 </h1>
                 <p className="text-gray-400 text-lg max-w-2xl mx-auto font-medium">
                     Seleccioná los <span className="text-emerald-400 font-bold tracking-tight">14</span> cracks que juegan este lunes y armamos los equipos más parejos.
@@ -203,8 +186,8 @@ export default function TeamGenerator() {
                             onClick={generateTeams}
                             disabled={selectedIds.length !== 14}
                             className={`px-8 py-2 rounded-full font-black text-sm uppercase tracking-widest transition-all ${selectedIds.length === 14
-                                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95'
-                                    : 'bg-white/5 text-gray-500 cursor-not-allowed border border-white/5'
+                                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95'
+                                : 'bg-white/5 text-gray-500 cursor-not-allowed border border-white/5'
                                 }`}
                         >
                             Armar Equipos
@@ -247,8 +230,8 @@ export default function TeamGenerator() {
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 className="grid md:grid-cols-2 gap-8 py-12 border-t border-white/10"
                             >
-                                <TeamDisplay title="EQUIPO ESMERALDA" team={teams.teamA} color="emerald" />
-                                <TeamDisplay title="EQUIPO AZUL" team={teams.teamB} color="blue" />
+                                <TeamDisplay title="EQUIPO BLANCO" team={teams.teamA} color="emerald" />
+                                <TeamDisplay title="EQUIPO NEGRO" team={teams.teamB} color="blue" />
                             </motion.div>
                         )}
                     </AnimatePresence>
