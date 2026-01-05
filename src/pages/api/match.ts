@@ -47,12 +47,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
             teamB: winner === 'teamB' ? 'wins' : (winner === 'teamA' ? 'losses' : 'draws')
         };
 
+        const scoreChangeA = winner === 'teamA' ? 1 : (winner === 'teamB' ? -1 : 0);
+        const scoreChangeB = winner === 'teamB' ? 1 : (winner === 'teamA' ? -1 : 0);
+
         teamAIds.forEach((id: string) => {
-            batchStatements.push(db.prepare(`UPDATE players SET ${results.teamA} = ${results.teamA} + 1, total_matches = total_matches + 1 WHERE id = ?`).bind(id));
+            batchStatements.push(db.prepare(`UPDATE players SET ${results.teamA} = ${results.teamA} + 1, total_matches = total_matches + 1, score = score + (${scoreChangeA}) WHERE id = ?`).bind(id));
         });
 
         teamBIds.forEach((id: string) => {
-            batchStatements.push(db.prepare(`UPDATE players SET ${results.teamB} = ${results.teamB} + 1, total_matches = total_matches + 1 WHERE id = ?`).bind(id));
+            batchStatements.push(db.prepare(`UPDATE players SET ${results.teamB} = ${results.teamB} + 1, total_matches = total_matches + 1, score = score + (${scoreChangeB}) WHERE id = ?`).bind(id));
         });
 
         await db.batch(batchStatements);

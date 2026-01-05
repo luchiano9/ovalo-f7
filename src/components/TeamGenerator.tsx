@@ -1,8 +1,7 @@
-
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { type Player } from '../data/players';
-import { Trophy, Users, CheckCircle2, RotateCcw, Shirt, ChevronRight, Save, Medal } from 'lucide-react';
+import { Trophy, Users, CheckCircle2, RotateCcw, Shirt, ChevronRight, Save, Medal, Plus, X, Upload, Activity } from 'lucide-react';
 
 const PlayerCard = ({
     player,
@@ -199,6 +198,44 @@ export default function TeamGenerator({ initialPlayers }: Props) {
     const [saved, setSaved] = useState(false);
     const [activeTab, setActiveTab] = useState<'generator' | 'history'>('generator');
     const [matchHistory, setMatchHistory] = useState<any[]>([]);
+    const [userRole, setUserRole] = useState<'guest' | 'admin' | null>(null);
+    const [loginData, setLoginData] = useState({ username: '', password: '' });
+    const [loginError, setLoginError] = useState(false);
+    const [showAddForm, setShowAddForm] = useState(false);
+    const [newPlayer, setNewPlayer] = useState({
+        name: '',
+        score: 50,
+        description: '',
+        position: 'Mediocampista',
+        image: ''
+    });
+    const [isCreating, setIsCreating] = useState(false);
+
+    const handleAddPlayer = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsCreating(true);
+        try {
+            const res = await fetch('/api/players', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newPlayer)
+            });
+            if (res.ok) {
+                const getRes = await fetch('/api/match');
+                if (getRes.ok) {
+                    const freshPlayers = await getRes.json();
+                    setPlayers(freshPlayers);
+                }
+                setShowAddForm(false);
+                setNewPlayer({ name: '', score: 50, description: '', position: 'Mediocampista', image: '' });
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error al crear jugador');
+        } finally {
+            setIsCreating(false);
+        }
+    };
 
     const fetchHistory = async () => {
         try {
@@ -213,10 +250,20 @@ export default function TeamGenerator({ initialPlayers }: Props) {
     };
 
     useMemo(() => {
-        if (activeTab === 'history') {
+        if (activeTab === 'history' && userRole) {
             fetchHistory();
         }
-    }, [activeTab]);
+    }, [activeTab, userRole]);
+
+    const handleLogin = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (loginData.username === 'luchi' && loginData.password === 'luchisco69') {
+            setUserRole('admin');
+        } else {
+            setLoginError(true);
+            setTimeout(() => setLoginError(false), 2000);
+        }
+    };
 
     const togglePlayer = (id: string) => {
         if (selectedIds.includes(id)) {
@@ -262,7 +309,7 @@ export default function TeamGenerator({ initialPlayers }: Props) {
     };
 
     const recordMatch = async () => {
-        if (!teams) return;
+        if (!teams || userRole !== 'admin') return;
         setIsSaving(true);
 
         const winner = scoreA > scoreB ? 'teamA' : (scoreB > scoreA ? 'teamB' : 'draw');
@@ -303,10 +350,99 @@ export default function TeamGenerator({ initialPlayers }: Props) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    const sortedPlayers = useMemo(() => {
+        return [...players].sort((a, b) => {
+            const winsA = a.wins || 0;
+            const winsB = b.wins || 0;
+            if (winsB !== winsA) return winsB - winsA;
+
+            const pjA = a.total_matches || 0;
+            const pjB = b.total_matches || 0;
+            if (pjB !== pjA) return pjB - pjA;
+
+            return Math.random() - 0.5;
+        });
+    }, [players]);
+
+    if (!userRole) {
+        return (
+            <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full max-w-md"
+                >
+                    <div className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] backdrop-blur-3xl shadow-2xl space-y-8">
+                        <div className="text-center space-y-2">
+                            <div className="inline-block p-4 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 mb-4">
+                                <Trophy className="w-12 h-12 text-emerald-500" />
+                            </div>
+                            <h2 className="text-4xl font-black tracking-tighter italic text-white">BIENVENIDO</h2>
+                            <p className="text-gray-500 font-medium">Fútbol Lunes Ovalo</p>
+                        </div>
+
+                        <form onSubmit={handleLogin} className="space-y-4">
+                            <input
+                                type="text"
+                                placeholder="Usuario"
+                                value={loginData.username}
+                                onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
+                            />
+                            <input
+                                type="password"
+                                placeholder="Contraseña"
+                                value={loginData.password}
+                                onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
+                            />
+
+                            <AnimatePresence>
+                                {loginError && (
+                                    <motion.p
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="text-red-400 text-sm font-bold text-center"
+                                    >
+                                        Datos incorrectos
+                                    </motion.p>
+                                )}
+                            </AnimatePresence>
+
+                            <button className="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-black py-4 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest italic">
+                                Entrar como Luchi
+                            </button>
+                        </form>
+
+                        <div className="relative">
+                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
+                            <div className="relative flex justify-center text-xs uppercase"><span className="bg-[#0b0b0b] px-4 text-gray-500 font-bold tracking-widest">O</span></div>
+                        </div>
+
+                        <button
+                            onClick={() => setUserRole('guest')}
+                            className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black py-4 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest italic"
+                        >
+                            Continuar como Invitado
+                        </button>
+                    </div>
+                </motion.div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-[#050505] text-white px-4 py-12 md:px-8">
             {/* Header */}
-            <div className="max-w-7xl mx-auto mb-16 text-center">
+            <div className="max-w-7xl mx-auto mb-16 text-center relative">
+                <button
+                    onClick={() => setUserRole(null)}
+                    className="absolute top-0 right-0 p-2 text-gray-500 hover:text-white transition-colors"
+                    title="Cerrar Sesión"
+                >
+                    <RotateCcw className="w-6 h-6 rotate-180" />
+                </button>
                 <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -333,7 +469,18 @@ export default function TeamGenerator({ initialPlayers }: Props) {
                     >
                         Historial
                     </button>
+                    {userRole === 'admin' && (
+                        <button
+                            onClick={() => setShowAddForm(true)}
+                            className="px-6 py-2 rounded-xl font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all flex items-center gap-2"
+                        >
+                            <Plus className="w-4 h-4" /> Agregar Jugador
+                        </button>
+                    )}
                 </div>
+                {userRole === 'guest' && (
+                    <p className="mt-4 text-[10px] uppercase tracking-widest text-emerald-500/40 font-black italic">Modo Lectura - No podés guardar partidos</p>
+                )}
             </div>
 
             <div className="max-w-7xl mx-auto">
@@ -382,7 +529,7 @@ export default function TeamGenerator({ initialPlayers }: Props) {
 
                         {/* Players Grid */}
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-24">
-                            {players.map((player) => (
+                            {sortedPlayers.map((player) => (
                                 <PlayerCard
                                     key={player.id}
                                     player={player}
@@ -414,23 +561,29 @@ export default function TeamGenerator({ initialPlayers }: Props) {
                                             animate={{ opacity: 1 }}
                                             transition={{ delay: 0.5 }}
                                         >
-                                            {!saved ? (
-                                                <button
-                                                    onClick={recordMatch}
-                                                    disabled={isSaving}
-                                                    className="group relative flex items-center gap-3 px-12 py-4 rounded-2xl bg-emerald-500 font-black text-lg uppercase tracking-tighter italic transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
-                                                >
-                                                    <Save className={`w-6 h-6 ${isSaving ? 'animate-pulse' : ''}`} />
-                                                    {isSaving ? 'Guardando...' : 'Finalizar Partido y Guardar Estadísticas'}
-                                                    <ChevronRight className="w-6 h-6 transition-transform group-hover:translate-x-1" />
-                                                </button>
-                                            ) : (
-                                                <div className="flex flex-col items-center gap-4 text-emerald-400">
-                                                    <div className="flex items-center gap-3 px-12 py-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 font-black text-lg uppercase tracking-tighter italic">
-                                                        <Medal className="w-8 h-8" />
-                                                        Partido Guardado Correctamente
+                                            {userRole === 'admin' ? (
+                                                !saved ? (
+                                                    <button
+                                                        onClick={recordMatch}
+                                                        disabled={isSaving}
+                                                        className="group relative flex items-center gap-3 px-12 py-4 rounded-2xl bg-emerald-500 font-black text-lg uppercase tracking-tighter italic transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                                                    >
+                                                        <Save className={`w-6 h-6 ${isSaving ? 'animate-pulse' : ''}`} />
+                                                        {isSaving ? 'Guardando...' : 'Finalizar Partido y Guardar Estadísticas'}
+                                                        <ChevronRight className="w-6 h-6 transition-transform group-hover:translate-x-1" />
+                                                    </button>
+                                                ) : (
+                                                    <div className="flex flex-col items-center gap-4 text-emerald-400">
+                                                        <div className="flex items-center gap-3 px-12 py-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 font-black text-lg uppercase tracking-tighter italic">
+                                                            <Medal className="w-8 h-8" />
+                                                            Partido Guardado Correctamente
+                                                        </div>
+                                                        <p className="text-gray-500 font-medium">Las estadísticas de los jugadores han sido actualizadas.</p>
                                                     </div>
-                                                    <p className="text-gray-500 font-medium">Las estadísticas de los jugadores han sido actualizadas.</p>
+                                                )
+                                            ) : (
+                                                <div className="px-12 py-4 rounded-2xl bg-white/5 border border-white/10 text-gray-500 font-bold italic">
+                                                    Iniciá como Admin para guardar el partido
                                                 </div>
                                             )}
                                         </motion.div>
@@ -443,6 +596,101 @@ export default function TeamGenerator({ initialPlayers }: Props) {
                     <MatchHistory matches={matchHistory} players={players} />
                 )}
             </div>
+
+            {/* Add Player Modal */}
+            <AnimatePresence>
+                {showAddForm && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="w-full max-w-xl bg-[#0b0b0b] border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden"
+                        >
+                            <div className="p-8 space-y-8">
+                                <div className="flex justify-between items-center">
+                                    <h3 className="text-3xl font-black italic tracking-tighter text-white uppercase">Nuevo Jugador</h3>
+                                    <button onClick={() => setShowAddForm(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors text-gray-500 hover:text-white">
+                                        <X className="w-6 h-6" />
+                                    </button>
+                                </div>
+
+                                <form onSubmit={handleAddPlayer} className="space-y-6">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2 col-span-2">
+                                            <label className="text-[10px] uppercase text-gray-500 font-bold tracking-widest ml-1">Nombre Completo</label>
+                                            <input
+                                                required
+                                                type="text"
+                                                placeholder="Ej: Luchini Messi"
+                                                value={newPlayer.name}
+                                                onChange={(e) => setNewPlayer({ ...newPlayer, name: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500/50"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] uppercase text-gray-500 font-bold tracking-widest ml-1">Posición</label>
+                                            <select
+                                                value={newPlayer.position}
+                                                onChange={(e) => setNewPlayer({ ...newPlayer, position: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500/50 appearance-none cursor-pointer"
+                                            >
+                                                <option value="Delantero">Delantero</option>
+                                                <option value="Mediocampista">Mediocampista</option>
+                                                <option value="Defensor">Defensor</option>
+                                                <option value="Arquero">Arquero</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] uppercase text-gray-500 font-bold tracking-widest ml-1">Habilidad (0-100)</label>
+                                            <input
+                                                required
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                value={newPlayer.score}
+                                                onChange={(e) => setNewPlayer({ ...newPlayer, score: parseInt(e.target.value) || 0 })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500/50"
+                                            />
+                                        </div>
+                                        <div className="space-y-2 col-span-2">
+                                            <label className="text-[10px] uppercase text-gray-500 font-bold tracking-widest ml-1">URL de Imagen (Opcional)</label>
+                                            <input
+                                                type="url"
+                                                placeholder="https://..."
+                                                value={newPlayer.image}
+                                                onChange={(e) => setNewPlayer({ ...newPlayer, image: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500/50"
+                                            />
+                                        </div>
+                                        <div className="space-y-2 col-span-2">
+                                            <label className="text-[10px] uppercase text-gray-500 font-bold tracking-widest ml-1">Descripción corta</label>
+                                            <textarea
+                                                rows={2}
+                                                placeholder="Un crack total..."
+                                                value={newPlayer.description}
+                                                onChange={(e) => setNewPlayer({ ...newPlayer, description: e.target.value })}
+                                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-emerald-500/50 resize-none"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        disabled={isCreating}
+                                        className="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-black py-5 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest italic flex items-center justify-center gap-3"
+                                    >
+                                        {isCreating ? 'Guardando...' : (
+                                            <>
+                                                <Plus className="w-6 h-6" /> Crear Jugador
+                                            </>
+                                        )}
+                                    </button>
+                                </form>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

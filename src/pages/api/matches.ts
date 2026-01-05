@@ -12,7 +12,7 @@ export const GET: APIRoute = async ({ locals, request }) => {
         const { results } = await db.prepare('SELECT * FROM matches ORDER BY date DESC').all();
 
         // Parse JSON strings back to arrays
-        const matches = results.map(match => ({
+        const matches = results.map((match: any) => ({
             ...match,
             team_a_players: JSON.parse(match.team_a_players as string),
             team_b_players: JSON.parse(match.team_b_players as string),
