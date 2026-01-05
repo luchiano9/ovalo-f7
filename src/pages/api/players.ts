@@ -52,3 +52,32 @@ export const POST: APIRoute = async ({ request, locals }) => {
         });
     }
 }
+
+export const PUT: APIRoute = async ({ request, locals }) => {
+    const runtime = (locals as any).runtime || (request as any).locals?.runtime;
+
+    if (!runtime?.env?.DB) {
+        return new Response(JSON.stringify({ error: 'DB not found' }), { status: 500 });
+    }
+
+    const db = runtime.env.DB;
+
+    try {
+        const { id, name, score, description, image, position } = await request.json();
+
+        if (!id || !name || score === undefined || !position) {
+            return new Response(JSON.stringify({ error: 'Missing fields' }), { status: 400 });
+        }
+
+        await db.prepare(
+            'UPDATE players SET name = ?, score = ?, description = ?, image = ?, position = ? WHERE id = ?'
+        ).bind(name, score, description, image, position, id).run();
+
+        return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    } catch (e: any) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+    }
+}
