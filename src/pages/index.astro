@@ -1,6 +1,23 @@
 ---
 import TeamGenerator from "../components/TeamGenerator";
 import "../styles/global.css";
+import { players as staticPlayers } from "../data/players";
+
+let playersData = staticPlayers;
+
+const runtime = (Astro.locals as any).runtime;
+if (runtime && runtime.env && runtime.env.DB) {
+	try {
+		const { results } = await runtime.env.DB.prepare(
+			"SELECT * FROM players",
+		).all();
+		if (results && results.length > 0) {
+			playersData = results as any;
+		}
+	} catch (e) {
+		console.error("Error fetching players from D1:", e);
+	}
+}
 ---
 
 <html lang="es">
@@ -24,6 +41,6 @@ import "../styles/global.css";
 	</head>
 	<body class="bg-[#050505] antialiased">
 		<div class="noise"></div>
-		<TeamGenerator client:load />
+		<TeamGenerator initialPlayers={playersData} client:load />
 	</body>
 </html>

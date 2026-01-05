@@ -6,6 +6,10 @@ export interface Player {
   description: string;
   image: string;
   position: 'Delantero' | 'Mediocampista' | 'Defensor' | 'Arquero' | 'Todoterreno';
+  wins?: number;
+  losses?: number;
+  draws?: number;
+  total_matches?: number;
 }
 
 export const players: Player[] = [
