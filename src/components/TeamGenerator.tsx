@@ -261,7 +261,12 @@ export default function TeamGenerator({ initialPlayers }: Props) {
     });
     const [isCreating, setIsCreating] = useState(false);
 
-    // Re-fetch players when matchType changes
+    const [showManualForm, setShowManualForm] = useState(false);
+    const [manualTeamA, setManualTeamA] = useState<string[]>([]);
+    const [manualTeamB, setManualTeamB] = useState<string[]>([]);
+    const [manualScoreA, setManualScoreA] = useState(0);
+    const [manualScoreB, setManualScoreB] = useState(0);
+
     const fetchPlayers = async () => {
         try {
             const res = await fetch(`/api/match?type=${matchType}`);
@@ -274,18 +279,35 @@ export default function TeamGenerator({ initialPlayers }: Props) {
         }
     };
 
+    const fetchHistory = async () => {
+        try {
+            const res = await fetch(`/api/matches?type=${matchType}`);
+            if (res.ok) {
+                const data = await res.json();
+                setMatchHistory(data);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     React.useEffect(() => {
         if (userRole) {
             fetchPlayers();
             if (activeTab === 'history') {
                 fetchHistory();
             }
-            // Reset state on switch
             setSelectedIds([]);
             setTeams(null);
             setSaved(false);
         }
     }, [matchType]);
+
+    useMemo(() => {
+        if (activeTab === 'history' && userRole) {
+            fetchHistory();
+        }
+    }, [activeTab, userRole]);
 
     const handleSavePlayer = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -327,24 +349,6 @@ export default function TeamGenerator({ initialPlayers }: Props) {
         });
         setShowAddForm(true);
     };
-
-    const fetchHistory = async () => {
-        try {
-            const res = await fetch(`/api/matches?type=${matchType}`);
-            if (res.ok) {
-                const data = await res.json();
-                setMatchHistory(data);
-            }
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
-    useMemo(() => {
-        if (activeTab === 'history' && userRole) {
-            fetchHistory();
-        }
-    }, [activeTab, userRole]);
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
@@ -436,6 +440,47 @@ export default function TeamGenerator({ initialPlayers }: Props) {
         setTeams(null);
         setSaved(false);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleSaveManualMatch = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (manualTeamA.length === 0 || manualTeamB.length === 0) {
+            alert('Debes seleccionar al menos un jugador por equipo');
+            return;
+        }
+
+        setIsSaving(true);
+        const winner = manualScoreA > manualScoreB ? 'teamA' : (manualScoreB > manualScoreA ? 'teamB' : 'draw');
+
+        try {
+            const res = await fetch('/api/match', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    teamAIds: manualTeamA,
+                    teamBIds: manualTeamB,
+                    teamAScore: manualScoreA,
+                    teamBScore: manualScoreB,
+                    winner,
+                    matchType
+                })
+            });
+
+            if (res.ok) {
+                await fetchHistory();
+                await fetchPlayers();
+                setShowManualForm(false);
+                setManualTeamA([]);
+                setManualTeamB([]);
+                setManualScoreA(0);
+                setManualScoreB(0);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error al guardar el partido');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const sortedPlayers = useMemo(() => {
@@ -577,12 +622,20 @@ export default function TeamGenerator({ initialPlayers }: Props) {
                         Historial
                     </button>
                     {userRole === 'admin' && (
-                        <button
-                            onClick={() => setShowAddForm(true)}
-                            className="px-6 py-2 rounded-xl font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all flex items-center gap-2"
-                        >
-                            <Plus className="w-4 h-4" /> Agregar Jugador
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setShowManualForm(true)}
+                                className="px-6 py-2 rounded-xl font-bold bg-white/5 text-gray-300 border border-white/10 hover:bg-white/10 transition-all flex items-center gap-2"
+                            >
+                                <Save className="w-4 h-4" /> Cargar Resultado
+                            </button>
+                            <button
+                                onClick={() => setShowAddForm(true)}
+                                className="px-6 py-2 rounded-xl font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all flex items-center gap-2"
+                            >
+                                <Plus className="w-4 h-4" /> Agregar Jugador
+                            </button>
+                        </div>
                     )}
                 </div>
                 {userRole === 'guest' && (
@@ -802,6 +855,118 @@ export default function TeamGenerator({ initialPlayers }: Props) {
                                     </button>
                                 </form>
                             </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Manual Match Modal */}
+            <AnimatePresence>
+                {showManualForm && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="w-full max-w-4xl bg-[#0b0b0b] border border-white/10 rounded-[2.5rem] shadow-2xl p-8 max-h-[90vh] overflow-y-auto"
+                        >
+                            <div className="flex justify-between items-center mb-8">
+                                <h3 className="text-3xl font-black italic tracking-tighter text-white uppercase">Cargar Partido Manual - {matchType === 'monday' ? 'Lunes' : 'Viernes'}</h3>
+                                <button onClick={() => setShowManualForm(false)} className="p-2 hover:bg-white/5 rounded-full text-gray-500 hover:text-white">
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleSaveManualMatch} className="space-y-8">
+                                <div className="grid md:grid-cols-2 gap-8">
+                                    {/* Team A Selection */}
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-end">
+                                            <h4 className="text-emerald-500 font-black italic uppercase tracking-tighter">Equipo Blanco</h4>
+                                            <div className="flex flex-col items-end">
+                                                <span className="text-[10px] text-gray-500 font-bold uppercase mb-1">Goles</span>
+                                                <input
+                                                    type="number"
+                                                    value={manualScoreA}
+                                                    onChange={(e) => setManualScoreA(parseInt(e.target.value) || 0)}
+                                                    className="w-16 bg-white/5 border border-white/10 rounded-lg py-2 text-center text-xl font-black"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="bg-white/5 rounded-2xl border border-white/10 p-4 min-h-[300px] overflow-y-auto max-h-[300px] space-y-2 custom-scrollbar">
+                                            {players.map(player => (
+                                                <button
+                                                    key={player.id}
+                                                    type="button"
+                                                    disabled={manualTeamB.includes(player.id)}
+                                                    onClick={() => {
+                                                        if (manualTeamA.includes(player.id)) {
+                                                            setManualTeamA(prev => prev.filter(id => id !== player.id));
+                                                        } else {
+                                                            setManualTeamA(prev => [...prev, player.id]);
+                                                        }
+                                                    }}
+                                                    className={`w-full flex items-center gap-3 p-2 rounded-xl border transition-all ${manualTeamA.includes(player.id)
+                                                        ? 'bg-emerald-500/20 border-emerald-500/50 text-white'
+                                                        : 'bg-white/5 border-transparent text-gray-500 hover:bg-white/10'
+                                                        } ${manualTeamB.includes(player.id) ? 'opacity-20 grayscale cursor-not-allowed' : ''}`}
+                                                >
+                                                    <img src={player.image} className="w-8 h-8 rounded-full object-cover" />
+                                                    <span className="text-sm font-bold truncate">{player.name}</span>
+                                                    {manualTeamA.includes(player.id) && <CheckCircle2 className="w-4 h-4 ml-auto" />}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Team B Selection */}
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-end">
+                                            <h4 className="text-blue-400 font-black italic uppercase tracking-tighter">Equipo Negro</h4>
+                                            <div className="flex flex-col items-end">
+                                                <span className="text-[10px] text-gray-500 font-bold uppercase mb-1">Goles</span>
+                                                <input
+                                                    type="number"
+                                                    value={manualScoreB}
+                                                    onChange={(e) => setManualScoreB(parseInt(e.target.value) || 0)}
+                                                    className="w-16 bg-white/5 border border-white/10 rounded-lg py-2 text-center text-xl font-black"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="bg-white/5 rounded-2xl border border-white/10 p-4 min-h-[300px] overflow-y-auto max-h-[300px] space-y-2 custom-scrollbar">
+                                            {players.map(player => (
+                                                <button
+                                                    key={player.id}
+                                                    type="button"
+                                                    disabled={manualTeamA.includes(player.id)}
+                                                    onClick={() => {
+                                                        if (manualTeamB.includes(player.id)) {
+                                                            setManualTeamB(prev => prev.filter(id => id !== player.id));
+                                                        } else {
+                                                            setManualTeamB(prev => [...prev, player.id]);
+                                                        }
+                                                    }}
+                                                    className={`w-full flex items-center gap-3 p-2 rounded-xl border transition-all ${manualTeamB.includes(player.id)
+                                                        ? 'bg-blue-500/20 border-blue-500/50 text-white'
+                                                        : 'bg-white/5 border-transparent text-gray-500 hover:bg-white/10'
+                                                        } ${manualTeamA.includes(player.id) ? 'opacity-20 grayscale cursor-not-allowed' : ''}`}
+                                                >
+                                                    <img src={player.image} className="w-8 h-8 rounded-full object-cover" />
+                                                    <span className="text-sm font-bold truncate">{player.name}</span>
+                                                    {manualTeamB.includes(player.id) && <CheckCircle2 className="w-4 h-4 ml-auto" />}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    disabled={isSaving || (manualTeamA.length === 0 && manualTeamB.length === 0)}
+                                    className={`w-full py-5 rounded-2xl font-black text-xl uppercase italic tracking-widest transition-all ${isSaving ? 'opacity-50' : 'hover:scale-[1.01] active:scale-[0.99]'
+                                        } ${matchType === 'monday' ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                                >
+                                    {isSaving ? 'Guardando...' : 'Guardar Resultado Manual'}
+                                </button>
+                            </form>
                         </motion.div>
                     </div>
                 )}
