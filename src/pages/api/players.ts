@@ -30,7 +30,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
         const batchStatements = [
             db.prepare(
-                'INSERT INTO players (id, name, description, image, position) VALUES (?, ?, ?, ?, ?)'
+                'INSERT INTO players (id, name, description, image, position, score, wins, losses, draws, total_matches) VALUES (?, ?, ?, ?, ?, 0, 0, 0, 0, 0)'
             ).bind(
                 id,
                 name,
