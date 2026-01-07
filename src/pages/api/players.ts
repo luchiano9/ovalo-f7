@@ -28,16 +28,25 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
         const id = crypto.randomUUID();
 
-        await db.prepare(
-            'INSERT INTO players (id, name, score, description, image, position, wins, losses, draws, total_matches) VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0)'
-        ).bind(
-            id,
-            name,
-            score,
-            description || '',
-            image || 'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?q=80&w=2671&auto=format&fit=crop',
-            position
-        ).run();
+        const batchStatements = [
+            db.prepare(
+                'INSERT INTO players (id, name, description, image, position) VALUES (?, ?, ?, ?, ?)'
+            ).bind(
+                id,
+                name,
+                description || '',
+                image || 'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?q=80&w=2671&auto=format&fit=crop',
+                position
+            ),
+            db.prepare(
+                'INSERT INTO player_stats (player_id, match_type, score) VALUES (?, ?, ?)'
+            ).bind(id, 'monday', score),
+            db.prepare(
+                'INSERT INTO player_stats (player_id, match_type, score) VALUES (?, ?, ?)'
+            ).bind(id, 'friday', score)
+        ];
+
+        await db.batch(batchStatements);
 
         return new Response(JSON.stringify({ success: true, id }), {
             status: 200,
@@ -63,15 +72,22 @@ export const PUT: APIRoute = async ({ request, locals }) => {
     const db = runtime.env.DB;
 
     try {
-        const { id, name, score, description, image, position } = await request.json();
+        const { id, name, score, description, image, position, matchType = 'monday' } = await request.json();
 
         if (!id || !name || score === undefined || !position) {
             return new Response(JSON.stringify({ error: 'Missing fields' }), { status: 400 });
         }
 
-        await db.prepare(
-            'UPDATE players SET name = ?, score = ?, description = ?, image = ?, position = ? WHERE id = ?'
-        ).bind(name, score, description, image, position, id).run();
+        const batchStatements = [
+            db.prepare(
+                'UPDATE players SET name = ?, description = ?, image = ?, position = ? WHERE id = ?'
+            ).bind(name, description, image, position, id),
+            db.prepare(
+                'UPDATE player_stats SET score = ? WHERE player_id = ? AND match_type = ?'
+            ).bind(score, id, matchType)
+        ];
+
+        await db.batch(batchStatements);
 
         return new Response(JSON.stringify({ success: true }), {
             status: 200,

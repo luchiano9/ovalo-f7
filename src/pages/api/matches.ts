@@ -7,9 +7,12 @@ export const GET: APIRoute = async ({ locals, request }) => {
         return new Response(JSON.stringify({ error: 'DB not found' }), { status: 500 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const matchType = searchParams.get('type') || 'monday';
+
     const db = runtime.env.DB;
     try {
-        const { results } = await db.prepare('SELECT * FROM matches ORDER BY date DESC').all();
+        const { results } = await db.prepare('SELECT * FROM matches WHERE match_type = ? ORDER BY date DESC').bind(matchType).all();
 
         // Parse JSON strings back to arrays
         const matches = results.map((match: any) => ({

@@ -8,9 +8,12 @@ let playersData = staticPlayers;
 const runtime = (Astro.locals as any).runtime;
 if (runtime && runtime.env && runtime.env.DB) {
 	try {
-		const { results } = await runtime.env.DB.prepare(
-			"SELECT * FROM players",
-		).all();
+		const { results } = await runtime.env.DB.prepare(`
+			SELECT p.*, ps.score, ps.wins, ps.losses, ps.draws, ps.total_matches 
+			FROM players p 
+			INNER JOIN player_stats ps ON p.id = ps.player_id 
+			WHERE ps.match_type = 'monday'
+		`).all();
 		if (results && results.length > 0) {
 			playersData = results as any;
 		}

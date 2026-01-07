@@ -20,7 +20,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
             return new Response(JSON.stringify({ error: 'Request body is empty' }), { status: 400 });
         }
 
-        const { teamAIds, teamBIds, winner, teamAScore, teamBScore } = JSON.parse(bodyText);
+        const { teamAIds, teamBIds, winner, teamAScore, teamBScore, matchType = 'monday' } = JSON.parse(bodyText);
 
         if (!teamAIds || !teamBIds || !winner) {
             return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400 });
@@ -31,14 +31,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
         batchStatements.push(
             db.prepare(
-                'INSERT INTO matches (id, team_a_players, team_b_players, team_a_score, team_b_score, winner) VALUES (?, ?, ?, ?, ?, ?)'
+                'INSERT INTO matches (id, team_a_players, team_b_players, team_a_score, team_b_score, winner, match_type) VALUES (?, ?, ?, ?, ?, ?, ?)'
             ).bind(
                 matchId,
                 JSON.stringify(teamAIds),
                 JSON.stringify(teamBIds),
                 teamAScore || 0,
                 teamBScore || 0,
-                winner
+                winner,
+                matchType
             )
         );
 
@@ -51,11 +52,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
         const scoreChangeB = winner === 'teamB' ? 1 : (winner === 'teamA' ? -1 : 0);
 
         teamAIds.forEach((id: string) => {
-            batchStatements.push(db.prepare(`UPDATE players SET ${results.teamA} = ${results.teamA} + 1, total_matches = total_matches + 1, score = score + (${scoreChangeA}) WHERE id = ?`).bind(id));
+            batchStatements.push(db.prepare(`UPDATE player_stats SET ${results.teamA} = ${results.teamA} + 1, total_matches = total_matches + 1, score = score + (${scoreChangeA}) WHERE player_id = ? AND match_type = ?`).bind(id, matchType));
         });
 
         teamBIds.forEach((id: string) => {
-            batchStatements.push(db.prepare(`UPDATE players SET ${results.teamB} = ${results.teamB} + 1, total_matches = total_matches + 1, score = score + (${scoreChangeB}) WHERE id = ?`).bind(id));
+            batchStatements.push(db.prepare(`UPDATE player_stats SET ${results.teamB} = ${results.teamB} + 1, total_matches = total_matches + 1, score = score + (${scoreChangeB}) WHERE player_id = ? AND match_type = ?`).bind(id, matchType));
         });
 
         await db.batch(batchStatements);
@@ -84,9 +85,18 @@ export const GET: APIRoute = async ({ locals, request }) => {
         return new Response(JSON.stringify({ error: 'DB not found' }), { status: 500 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const matchType = searchParams.get('type') || 'monday';
+
     const db = runtime.env.DB;
     try {
-        const { results } = await db.prepare('SELECT * FROM players').all();
+        const { results } = await db.prepare(`
+            SELECT p.*, ps.score, ps.wins, ps.losses, ps.draws, ps.total_matches 
+            FROM players p 
+            INNER JOIN player_stats ps ON p.id = ps.player_id 
+            WHERE ps.match_type = ?
+        `).bind(matchType).all();
+
         return new Response(JSON.stringify(results), {
             status: 200,
             headers: { 'Content-Type': 'application/json' }

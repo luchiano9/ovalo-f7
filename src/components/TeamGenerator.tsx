@@ -237,6 +237,7 @@ const MatchHistory = ({ matches, players }: { matches: any[], players: Player[] 
 };
 
 export default function TeamGenerator({ initialPlayers }: Props) {
+    const [matchType, setMatchType] = useState<'monday' | 'friday'>('monday');
     const [players, setPlayers] = useState<Player[]>(initialPlayers);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [teams, setTeams] = useState<{ teamA: Player[], teamB: Player[] } | null>(null);
@@ -260,12 +261,40 @@ export default function TeamGenerator({ initialPlayers }: Props) {
     });
     const [isCreating, setIsCreating] = useState(false);
 
+    // Re-fetch players when matchType changes
+    const fetchPlayers = async () => {
+        try {
+            const res = await fetch(`/api/match?type=${matchType}`);
+            if (res.ok) {
+                const freshPlayers = await res.json();
+                setPlayers(freshPlayers);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    React.useEffect(() => {
+        if (userRole) {
+            fetchPlayers();
+            if (activeTab === 'history') {
+                fetchHistory();
+            }
+            // Reset state on switch
+            setSelectedIds([]);
+            setTeams(null);
+            setSaved(false);
+        }
+    }, [matchType]);
+
     const handleSavePlayer = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsCreating(true);
         try {
             const method = editingPlayerId ? 'PUT' : 'POST';
-            const body = editingPlayerId ? { ...newPlayer, id: editingPlayerId } : newPlayer;
+            const body = editingPlayerId
+                ? { ...newPlayer, id: editingPlayerId, matchType }
+                : newPlayer;
 
             const res = await fetch('/api/players', {
                 method,
@@ -274,11 +303,7 @@ export default function TeamGenerator({ initialPlayers }: Props) {
             });
 
             if (res.ok) {
-                const getRes = await fetch('/api/match');
-                if (getRes.ok) {
-                    const freshPlayers = await getRes.json();
-                    setPlayers(freshPlayers);
-                }
+                await fetchPlayers();
                 setShowAddForm(false);
                 setEditingPlayerId(null);
                 setNewPlayer({ name: '', score: 50, description: '', position: 'Mediocampista', image: '' });
@@ -305,7 +330,7 @@ export default function TeamGenerator({ initialPlayers }: Props) {
 
     const fetchHistory = async () => {
         try {
-            const res = await fetch('/api/matches');
+            const res = await fetch(`/api/matches?type=${matchType}`);
             if (res.ok) {
                 const data = await res.json();
                 setMatchHistory(data);
@@ -389,17 +414,14 @@ export default function TeamGenerator({ initialPlayers }: Props) {
                     teamBIds: teams.teamB.map(p => p.id),
                     teamAScore: scoreA,
                     teamBScore: scoreB,
-                    winner
+                    winner,
+                    matchType
                 })
             });
 
             if (res.ok) {
                 setSaved(true);
-                const getRes = await fetch('/api/match');
-                if (getRes.ok) {
-                    const freshPlayers = await getRes.json();
-                    setPlayers(freshPlayers);
-                }
+                await fetchPlayers();
             }
         } catch (e) {
             console.error(e);
@@ -444,7 +466,7 @@ export default function TeamGenerator({ initialPlayers }: Props) {
                                 <Trophy className="w-12 h-12 text-emerald-500" />
                             </div>
                             <h2 className="text-4xl font-black tracking-tighter italic text-white">BIENVENIDO</h2>
-                            <p className="text-gray-500 font-medium">Fútbol Lunes Ovalo</p>
+                            <p className="text-gray-500 font-medium">Fútbol Ovalo</p>
                         </div>
 
                         <form onSubmit={handleLogin} className="space-y-4">
@@ -509,20 +531,39 @@ export default function TeamGenerator({ initialPlayers }: Props) {
                 >
                     <RotateCcw className="w-6 h-6 rotate-180" />
                 </button>
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="inline-block p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 mb-6"
-                >
-                    <Trophy className="w-10 h-10 text-emerald-500" />
-                </motion.div>
-                <h1 className="text-5xl md:text-7xl font-black tracking-tighter italic mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-white/40">
-                    FUTBOL LUNES <span className="text-emerald-500 underline decoration-4 underline-offset-8">OVALO</span>
-                </h1>
+                <div className="flex flex-col items-center gap-6">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5 }}
+                        className={`inline-block p-3 rounded-2xl bg-${matchType === 'monday' ? 'emerald' : 'blue'}-500/10 border border-${matchType === 'monday' ? 'emerald' : 'blue'}-500/20`}
+                    >
+                        <Trophy className={`w-10 h-10 text-${matchType === 'monday' ? 'emerald-500' : 'blue-400'}`} />
+                    </motion.div>
+
+                    <h1 className="text-5xl md:text-7xl font-black tracking-tighter italic bg-clip-text text-transparent bg-gradient-to-b from-white to-white/40 uppercase">
+                        FUTBOL {matchType === 'monday' ? 'LUNES' : 'VIERNES'} <span className={`${matchType === 'monday' ? 'text-emerald-500' : 'text-blue-400'} underline decoration-4 underline-offset-8`}>OVALO</span>
+                    </h1>
+
+                    {/* Match Type Toggle */}
+                    <div className="flex items-center gap-3 p-1.5 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-xl">
+                        <button
+                            onClick={() => setMatchType('monday')}
+                            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black italic transition-all uppercase tracking-tighter ${matchType === 'monday' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            Lunes
+                        </button>
+                        <button
+                            onClick={() => setMatchType('friday')}
+                            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black italic transition-all uppercase tracking-tighter ${matchType === 'friday' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            Viernes
+                        </button>
+                    </div>
+                </div>
 
                 {/* Tabs */}
-                <div className="flex justify-center gap-4 mt-8">
+                <div className="flex justify-center gap-4 mt-12">
                     <button
                         onClick={() => setActiveTab('generator')}
                         className={`px-6 py-2 rounded-xl font-bold transition-all ${activeTab === 'generator' ? 'bg-white/10 text-emerald-400 border border-emerald-500/20 shadow-lg shadow-emerald-500/5' : 'text-gray-500 hover:text-white'}`}
@@ -559,7 +600,7 @@ export default function TeamGenerator({ initialPlayers }: Props) {
                                 className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-full px-6 py-4 flex items-center gap-8 shadow-2xl"
                             >
                                 <div className="flex items-center gap-3">
-                                    <Users className="w-5 h-5 text-emerald-500" />
+                                    <Users className={`w-5 h-5 ${matchType === 'monday' ? 'text-emerald-500' : 'text-blue-400'}`} />
                                     <div className="flex flex-col">
                                         <span className="text-[10px] uppercase text-gray-500 font-bold leading-none">Seleccionados</span>
                                         <span className="text-xl font-mono font-black">{selectedIds.length}/14</span>
@@ -572,7 +613,7 @@ export default function TeamGenerator({ initialPlayers }: Props) {
                                     onClick={generateTeams}
                                     disabled={selectedIds.length !== 14}
                                     className={`px-8 py-2 rounded-full font-black text-sm uppercase tracking-widest transition-all ${selectedIds.length === 14
-                                        ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95'
+                                        ? (matchType === 'monday' ? 'bg-emerald-500 shadow-emerald-500/20' : 'bg-blue-500 shadow-blue-500/20') + ' text-white shadow-lg hover:scale-105 active:scale-95'
                                         : 'bg-white/5 text-gray-500 cursor-not-allowed border border-white/5'
                                         }`}
                                 >
@@ -633,15 +674,15 @@ export default function TeamGenerator({ initialPlayers }: Props) {
                                                     <button
                                                         onClick={recordMatch}
                                                         disabled={isSaving}
-                                                        className="group relative flex items-center gap-3 px-12 py-4 rounded-2xl bg-emerald-500 font-black text-lg uppercase tracking-tighter italic transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                                                        className={`group relative flex items-center gap-3 px-12 py-4 rounded-2xl ${matchType === 'monday' ? 'bg-emerald-500' : 'bg-blue-500'} font-black text-lg uppercase tracking-tighter italic transition-all hover:scale-105 active:scale-95 disabled:opacity-50`}
                                                     >
                                                         <Save className={`w-6 h-6 ${isSaving ? 'animate-pulse' : ''}`} />
                                                         {isSaving ? 'Guardando...' : 'Finalizar Partido y Guardar Estadísticas'}
                                                         <ChevronRight className="w-6 h-6 transition-transform group-hover:translate-x-1" />
                                                     </button>
                                                 ) : (
-                                                    <div className="flex flex-col items-center gap-4 text-emerald-400">
-                                                        <div className="flex items-center gap-3 px-12 py-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 font-black text-lg uppercase tracking-tighter italic">
+                                                    <div className={`flex flex-col items-center gap-4 text-${matchType === 'monday' ? 'emerald-400' : 'blue-400'}`}>
+                                                        <div className={`flex items-center gap-3 px-12 py-4 rounded-2xl bg-${matchType === 'monday' ? 'emerald' : 'blue'}-500/10 border border-${matchType === 'monday' ? 'emerald' : 'blue'}-500/20 font-black text-lg uppercase tracking-tighter italic`}>
                                                             <Medal className="w-8 h-8" />
                                                             Partido Guardado Correctamente
                                                         </div>
@@ -750,7 +791,7 @@ export default function TeamGenerator({ initialPlayers }: Props) {
 
                                     <button
                                         disabled={isCreating}
-                                        className="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-black py-5 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest italic flex items-center justify-center gap-3"
+                                        className={`w-full ${matchType === 'monday' ? 'bg-emerald-500 hover:bg-emerald-400' : 'bg-blue-500 hover:bg-blue-400'} text-white font-black py-5 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest italic flex items-center justify-center gap-3`}
                                     >
                                         {isCreating ? 'Guardando...' : (
                                             <>
