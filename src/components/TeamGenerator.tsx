@@ -376,14 +376,36 @@ export default function TeamGenerator({ initialPlayers }: Props) {
         if (selectedIds.length < 14) return;
 
         const selectedPlayers = players.filter(p => selectedIds.includes(p.id));
-        const sorted = [...selectedPlayers].sort((a, b) => b.score - a.score);
+
+        // Separar arqueros del resto
+        const goalkeepers = selectedPlayers.filter(p => p.position === 'Arquero').sort((a, b) => b.score - a.score);
+        const others = selectedPlayers.filter(p => p.position !== 'Arquero').sort((a, b) => b.score - a.score);
 
         const teamA: Player[] = [];
         const teamB: Player[] = [];
         let totalScoreA = 0;
         let totalScoreB = 0;
 
-        sorted.forEach(player => {
+        // Distribuir arqueros primero (máximo 1 por equipo)
+        if (goalkeepers.length > 0) {
+            teamA.push(goalkeepers[0]);
+            totalScoreA += goalkeepers[0].score;
+        }
+        if (goalkeepers.length > 1) {
+            teamB.push(goalkeepers[1]);
+            totalScoreB += goalkeepers[1].score;
+        }
+
+        // Si hay más de 2 arqueros por alguna razón, el resto se trata como jugadores normales
+        const remainingPlayers = [...others];
+        if (goalkeepers.length > 2) {
+            remainingPlayers.push(...goalkeepers.slice(2));
+        }
+
+        // Ordenar el resto por nivel para equilibrar
+        remainingPlayers.sort((a, b) => b.score - a.score);
+
+        remainingPlayers.forEach(player => {
             if (teamA.length < 7 && (totalScoreA <= totalScoreB || teamB.length === 7)) {
                 teamA.push(player);
                 totalScoreA += player.score;
